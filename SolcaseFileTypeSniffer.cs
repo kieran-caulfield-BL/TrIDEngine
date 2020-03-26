@@ -9,11 +9,14 @@ using System.IO;
 // Define an alias for TrIDEngine class
 using TrIDEngine = TrID.TrIDEngine;
 
-static class Constants 
+static class Constants
 {
     public const string JPG = "JPG";
     public const string HTML = "HTML";
     public const string XLS = "XLS";
+    public const string TIF = "TIF/TIFF";
+    public const string TMDX = "TMDX/TMVX";
+    public const string MPO = "MPO";
 
 }
 
@@ -34,7 +37,7 @@ namespace SolcaseFileTypeSniffer
 
             if (!(System.IO.Directory.Exists(TargetDir)))
             {
-                System.Console.WriteLine("Directory Not found: ." + TargetDir) ;
+                System.Console.WriteLine("Directory Not found: ." + TargetDir);
                 Environment.Exit(1);
             }
 
@@ -45,7 +48,7 @@ namespace SolcaseFileTypeSniffer
             //string sCurDir = Directory.GetCurrentDirectory();
             string sCurDir = "C:\\TrID\\triddefs_xml\\defs\\";
             //Console.WriteLine(sCurDir + " Checking definitions files...");
-            string[] sDefsList = Directory.GetFiles(sCurDir, "*.trid.xml",SearchOption.AllDirectories);
+            string[] sDefsList = Directory.GetFiles(sCurDir, "*.trid.xml", SearchOption.AllDirectories);
             if (sDefsList.Length == 0)
             {
                 Console.WriteLine("No definitions available!");
@@ -64,13 +67,13 @@ namespace SolcaseFileTypeSniffer
                 PE.LoadDefinitionByFilePath(sDefFile);
             }
 
-			// This is just for showing how to save & reuse the loaded defs
-			System.Collections.ArrayList MyDefPack;
+            // This is just for showing how to save & reuse the loaded defs
+            System.Collections.ArrayList MyDefPack;
             MyDefPack = (System.Collections.ArrayList)PE.GetDefinitions();
-			// Clear all the definitions in memory...
-			PE.ClearDefinitions();
-			// ... Reload them!
-			PE.SetDefs(ref MyDefPack);
+            // Clear all the definitions in memory...
+            PE.ClearDefinitions();
+            // ... Reload them!
+            PE.SetDefs(ref MyDefPack);
 
             //Console.WriteLine("");
             //Console.WriteLine("Analyzing...");
@@ -85,7 +88,7 @@ namespace SolcaseFileTypeSniffer
             }
 
             try
-            { 
+            {
                 foreach (string sTargetFilePath in sTargetFileList)
                 {
                     // Submit the file to analyze
@@ -112,26 +115,55 @@ namespace SolcaseFileTypeSniffer
                     // JPG does not preview correctly in Edge Internet Explorer but JPEG does so flip the Extn from JPG to JPEG
                     // HTML does not preview correctly in Edge Internet Explorer but HTM does so flip the Extn from HTML to HTM
                     // XLS 32500 (Points) are actually .DOC templates , not XLS Spreadsheets. 
+                    // TIF/TIFF is not a valid extn, only the singular can be used (either is fine)
+                    // OLE2 objects are emails with attachments, they are in the range 8000 (doc), 93000(msg), 191500(?)
+                    // File Extensions must be lower case
+                    // MPO files will not preview in Edge Inter Explorer buyt JPEG will show them
 
                     if (ExtResults[0].Points == 0)
                     {
-                        Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt +".TXT" + "," + ExtResults[0].Points + ",TXT,Default File Type to TXT");
+                        Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".txt" + "," + ExtResults[0].Points + ",TXT,Default File Type to TXT");
+                    }
+                    else if (ExtResults[0].Points == 8000 || ExtResults[0].Points == 93000 || ExtResults[0].Points == 191500)
+                    {
+                        if (ExtResults[0].Points == 8000)
+                        {
+                            Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".doc" + "," + ExtResults[0].Points + ",DOC," + ExtResults[0].ExtraInfo.FileType);
+                        }
+                        if (ExtResults[0].Points == 93000)
+                        {
+                            Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".msg" + "," + ExtResults[0].Points + ",MSG," + ExtResults[0].ExtraInfo.FileType);
+                        }
+                        if (ExtResults[0].Points == 191500)
+                        {
+                            Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".doc" + "," + ExtResults[0].Points + ",DOC," + ExtResults[0].ExtraInfo.FileType);
+                        }
+
                     }
                     else
                     {
                         switch (ExtResults[0].ExtraInfo.FileExt)
                         {
                             case Constants.JPG:
-                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".JPEG" + "," + ExtResults[0].Points + ",JPEG," + ExtResults[0].ExtraInfo.FileType);
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".jpeg" + "," + ExtResults[0].Points + ",JPEG," + ExtResults[0].ExtraInfo.FileType);
                                 break;
                             case Constants.HTML:
-                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".HTM" + "," + ExtResults[0].Points + ",HTM," + ExtResults[0].ExtraInfo.FileType);
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".htm" + "," + ExtResults[0].Points + ",HTM," + ExtResults[0].ExtraInfo.FileType);
                                 break;
                             case Constants.XLS:
-                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".DOC" + "," + ExtResults[0].Points + ",DOC," + ExtResults[0].ExtraInfo.FileType);
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".doc" + "," + ExtResults[0].Points + ",DOC," + ExtResults[0].ExtraInfo.FileType);
+                                break;
+                            case Constants.TIF:
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".tif" + "," + ExtResults[0].Points + ",TIF," + ExtResults[0].ExtraInfo.FileType);
+                                break;
+                            case Constants.TMDX:
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".tmdx" + "," + ExtResults[0].Points + ",TMDX," + ExtResults[0].ExtraInfo.FileType);
+                                break;
+                            case Constants.MPO:
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + ".jpeg" + "," + ExtResults[0].Points + ",MPO," + ExtResults[0].ExtraInfo.FileType);
                                 break;
                             default:
-                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + "." + ExtResults[0].ExtraInfo.FileExt + "," + ExtResults[0].Points + "," + ExtResults[0].ExtraInfo.FileExt + "," + ExtResults[0].ExtraInfo.FileType);
+                                Console.WriteLine(sFileName + "," + sTargetFilePath + "," + sFileNameNoExt + "." + ExtResults[0].ExtraInfo.FileExt.ToLower() + "," + ExtResults[0].Points + "," + ExtResults[0].ExtraInfo.FileExt + "," + ExtResults[0].ExtraInfo.FileType);
                                 break;
                         }
                     }
